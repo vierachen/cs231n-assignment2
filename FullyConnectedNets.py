@@ -683,7 +683,7 @@ plt.show()
 # 
 # 
 # ## Answer: 
-# [FILL THIS IN]
+# [随着迭代次数增加，梯度积累，更新量会越来越小并逐渐趋于0. Adam不会存在这个问题，因为Adam乘了因子，会逐渐减少最早时的梯度累积值。]
 # 
 # %% [markdown]
 # # Train a good model!
@@ -701,6 +701,9 @@ best_model = None
 # the best_model variable.                                                     #
 ################################################################################
 # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+model = FullyConnectedNet([100, 100, 100], weight_scale=5e-2, reg = 1e-2)
+solver = Solver(model, data, update_rule = 'Adam', batch_size = 256, \
+                optim_config={"learning_rate":1e-3}, )
 
 pass
 
