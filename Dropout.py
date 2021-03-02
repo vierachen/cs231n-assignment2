@@ -86,7 +86,7 @@ print('dx relative error: ', rel_error(dx, dx_num))
 # What happens if we do not divide the values being passed through inverse dropout by `p` in the dropout layer? Why does that happen?
 # 
 # ## Answer:
-# [FILL THIS IN]
+# [经过dropout后，数据的期望值变化]
 # 
 # %% [markdown]
 # # Fully-connected nets with Dropout

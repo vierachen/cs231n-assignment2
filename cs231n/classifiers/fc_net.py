@@ -209,20 +209,51 @@ class FullyConnectedNet(object):
         # parameters should be initialized to zeros.                               #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        for i in range(self.num_layers):
-            layer = i+1
-            str_w = 'W' + str(layer)
-            str_b = 'b' + str(layer)
-            if layer == 1:
-                self.params[str_w] = weight_scale * np.random.randn(input_dim, hidden_dims[i])
-                self.params[str_b] = np.zeros(hidden_dims[i])
-            elif layer == self.num_layers:
-                self.params[str_w] = weight_scale * np.random.randn(hidden_dims[i-1], num_classes)
-                self.params[str_b] = np.zeros(num_classes)
-            else:
-                self.params[str_w] = weight_scale * np.random.randn(hidden_dims[i-1], hidden_dims[i])
-                self.params[str_b] = np.zeros(hidden_dims[i])
-                
+        if self.normalization:
+            for i in range(self.num_layers):
+                layer = i+1
+                str_w = 'W' + str(layer)
+                str_b = 'b' + str(layer)
+                str_gamma = 'gamma' + str(layer)
+                str_beta = 'beta' + str(layer)
+
+                if layer == 1:
+                    self.params[str_w] = weight_scale * \
+                        np.random.randn(input_dim, hidden_dims[i])
+                    self.params[str_b] = np.zeros(hidden_dims[i])
+                    
+                    self.params[str_gamma] = np.ones(input_dim) #TODO 维度不对
+                    self.params[str_beta] = np.zeros(input_dim)
+                elif layer == self.num_layers:
+                    self.params[str_w] = weight_scale * \
+                        np.random.randn(hidden_dims[i-1], num_classes)
+                    self.params[str_b] = np.zeros(num_classes)
+                else:
+                    self.params[str_w] = weight_scale * \
+                        np.random.randn(hidden_dims[i-1], hidden_dims[i])
+                    self.params[str_b] = np.zeros(hidden_dims[i])
+
+                    self.params[str_gamma] = np.ones(input_dim)
+                    self.params[str_beta] = np.zeros(input_dim)
+        else:
+            for i in range(self.num_layers):
+                layer = i+1
+                str_w = 'W' + str(layer)
+                str_b = 'b' + str(layer)
+
+                if layer == 1:
+                    self.params[str_w] = weight_scale * \
+                        np.random.randn(input_dim, hidden_dims[i])
+                    self.params[str_b] = np.zeros(hidden_dims[i])
+                elif layer == self.num_layers:
+                    self.params[str_w] = weight_scale * \
+                        np.random.randn(hidden_dims[i-1], num_classes)
+                    self.params[str_b] = np.zeros(num_classes)
+                else:
+                    self.params[str_w] = weight_scale * \
+                        np.random.randn(hidden_dims[i-1], hidden_dims[i])
+                    self.params[str_b] = np.zeros(hidden_dims[i])
+
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -287,19 +318,40 @@ class FullyConnectedNet(object):
         N = X.shape[0]
         h={}
         self.cache = {}
-        for i in range(self.num_layers):
-            layer = i+1
-            str_w = 'W' + str(layer)
-            str_b = 'b' + str(layer)
+        
+        if self.normalization:
+            for i in range(self.num_layers):
+                layer = i+1
+                str_w = 'W' + str(layer)
+                str_b = 'b' + str(layer)
+                str_gamma = 'gamma' + str(layer)
+                str_beta = 'beta' + str(layer)
+                str_gamma = 'gamma' + str(layer)
+                str_beta = 'beta' + str(layer)
+                if layer == 1:
+                    h[layer], self.cache[layer] = affine_bn_relu_forward(
+                        X.reshape(N, -1), self.params[str_w], self.params[str_b], self.params[str_gamma], self.params[str_beta], bn_param)
+                elif layer == self.num_layers:
+                    scores, self.cache[layer] = affine_forward(
+                        h[layer-1], self.params[str_w], self.params[str_b])
+                else:
+                    h[layer], self.cache[layer] = affine_bn_relu_forward(
+                        h[layer - 1], self.params[str_w], self.params[str_b], self.params[str_gamma], self.params[str_beta], bn_param)
+        else:
+            for i in range(self.num_layers):
+                layer = i+1
+                str_w = 'W' + str(layer)
+                str_b = 'b' + str(layer)
+                if layer == 1:
+                        h[layer], self.cache[layer] = affine_relu_forward(
+                            X.reshape(N, -1), self.params[str_w], self.params[str_b])
+                elif layer == self.num_layers:
+                    scores, self.cache[layer] = affine_forward(
+                        h[layer-1], self.params[str_w], self.params[str_b])
+                else:
+                    h[layer], self.cache[layer] = affine_relu_forward(
+                        h[layer - 1], self.params[str_w], self.params[str_b])
 
-            if layer == 1:
-                h[layer], self.cache[layer] = affine_relu_forward(X.reshape(N, -1), self.params[str_w], self.params[str_b])
-            elif layer == self.num_layers:
-                scores, self.cache[layer] = affine_forward(h[layer-1], self.params[str_w], self.params[str_b])
-            else:
-                h[layer], self.cache[layer] = affine_relu_forward(h[layer - 1], self.params[str_w], self.params[str_b])
-         
-            
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -332,17 +384,36 @@ class FullyConnectedNet(object):
             loss += 0.5*self.reg*np.sum(self.params[str_w] * self.params[str_w])
 
         dh = {}
-        for layer in range(self.num_layers, 0, -1):
-            i = layer -1
-            str_w = 'W' + str(layer)
-            str_b = 'b' + str(layer)
-            
-            if layer == self.num_layers:
-                dh[i], grads[str_w], grads[str_b] = affine_backward(dscores, self.cache[layer])
-            else:
-                dh[i], grads[str_w], grads[str_b] = affine_relu_backward(dh[layer], self.cache[layer])
-            
-            grads[str_w] += self.reg * self.params[str_w]
+
+        if self.normalization:
+            for layer in range(self.num_layers, 0, -1):
+                i = layer - 1
+                str_w = 'W' + str(layer)
+                str_b = 'b' + str(layer)
+                str_gamma = 'gamma' + str(layer)
+                str_beta = 'beta' + str(layer)
+                str_gamma = 'gamma' + str(layer)
+                str_beta = 'beta' + str(layer)
+                if layer == self.num_layers:
+                    dh[i], grads[str_w], grads[str_b] = affine_backward(
+                        dscores, self.cache[layer])
+                else:
+                    dh[i], grads[str_w], grads[str_b], grads[str_gamma], grads[str_beta]  = affine_bn_relu_backward(
+                        dh[layer], self.cache[layer])
+
+                grads[str_w] += self.reg * self.params[str_w]
+        else:
+            for layer in range(self.num_layers, 0, -1):
+                i = layer -1
+                str_w = 'W' + str(layer)
+                str_b = 'b' + str(layer)
+
+                if layer == self.num_layers:
+                    dh[i], grads[str_w], grads[str_b] = affine_backward(dscores, self.cache[layer])
+                else:
+                    dh[i], grads[str_w], grads[str_b] = affine_relu_backward(dh[layer], self.cache[layer])
+                
+                grads[str_w] += self.reg * self.params[str_w]
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -351,3 +422,20 @@ class FullyConnectedNet(object):
         ############################################################################
 
         return loss, grads
+
+
+def affine_bn_relu_forward(x, w, b, gamma, beta, bn_param):
+    a, fc_cache = affine_forward(x, w, b)
+    b, bn_cache = batchnorm_forward(a, gamma, beta, bn_param)
+    out, relu_cache = relu_forward(b)
+
+    cache = (fc_cache, bn_cache, relu_cache)
+
+    return out, cache
+
+def affine_bn_relu_backward(dout, cache):
+    fc_cache, bn_cache, relu_cache = cache
+    db = relu_backward(dout, relu_cache)
+    da, dgamma, dbeta = batchnorm_backward(db, bn_cache)
+    dx, dw, db = affine_backward(da, fc_cache)
+    return dx, dw, db, dgamma, dbeta

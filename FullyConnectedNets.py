@@ -701,9 +701,10 @@ best_model = None
 # the best_model variable.                                                     #
 ################################################################################
 # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-model = FullyConnectedNet([100, 100, 100], weight_scale=5e-2, reg = 1e-2)
-solver = Solver(model, data, update_rule = 'Adam', batch_size = 256, \
-                optim_config={"learning_rate":1e-3}, )
+
+model = FullyConnectedNet([100, 100, 100], weight_scale=5e-2, reg = 1e-2, normalization='batchnorm')
+solver = Solver(model, data, update_rule = 'adam', batch_size = 256, \
+                optim_config={"learning_rate":1e-3} )
 
 pass
 

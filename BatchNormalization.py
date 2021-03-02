@@ -185,7 +185,7 @@ print('dbeta error: ', rel_error(db_num, dbeta))
 # 
 # After doing so, implement the simplified batch normalization backward pass in the function `batchnorm_backward_alt` and compare the two implementations by running the following. Your two implementations should compute nearly identical results, but the alternative implementation should be a bit faster.
 
-# %%
+# %% 
 np.random.seed(231)
 N, D = 100, 500
 x = 5 * np.random.randn(N, D) + 12
