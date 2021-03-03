@@ -409,7 +409,8 @@ plt.show()
 # Describe the results of this experiment. How does the scale of weight initialization affect models with/without batch normalization differently, and why?
 # 
 # ## Answer:
-# [FILL THIS IN]
+# [without batch normalization: 模型对weight初始化值比较敏感，由于层间累积作用；
+# with batchnorm: 模型对weight的初始化值适应性更强。且可以明显减小过拟合问题。]
 # 
 # %% [markdown]
 # # Batch normalization and batch size
@@ -481,7 +482,7 @@ plt.show()
 # Describe the results of this experiment. What does this imply about the relationship between batch normalization and batch size? Why is this relationship observed?
 # 
 # ## Answer:
-# [FILL THIS IN]
+# [batch size 越大，bn效果越好。由于batch计算mean和val时用的是单个batch中所有样本各通道的mean和var,如果batch size过小，可能存在于整体样本偏差较大。]
 # 
 # %% [markdown]
 # # Layer Normalization
@@ -500,7 +501,7 @@ plt.show()
 # 4. Setting all RGB values to either 0 or 1 depending on a given threshold.
 # 
 # ## Answer:
-# [FILL THIS IN]
+# [BN: 3; LN: 2]
 # 
 # %% [markdown]
 # # Layer Normalization: Implementation
@@ -601,6 +602,6 @@ plt.show()
 # 
 # 
 # ## Answer:
-# [FILL THIS IN]
+# [2 3]
 # 
 

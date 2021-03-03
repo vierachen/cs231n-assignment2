@@ -133,6 +133,8 @@ small_data = {
 solvers = {}
 dropout_choices = [1, 0.25]
 for dropout in dropout_choices:
+  # hidden_dims = [500, 500, 500, 500]
+  # model = FullyConnectedNet(hidden_dims, dropout=dropout)
   model = FullyConnectedNet([500], dropout=dropout)
   print(dropout)
 
@@ -161,6 +163,7 @@ for dropout in dropout_choices:
 plt.subplot(3, 1, 1)
 for dropout in dropout_choices:
   plt.plot(solvers[dropout].train_acc_history, 'o', label='%.2f dropout' % dropout)
+
 plt.title('Train accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
@@ -189,6 +192,6 @@ plt.show()
 # Suppose we are training a deep fully-connected network for image classification, with dropout after hidden layers (parameterized by keep probability p). If we are concerned about overfitting, how should we modify p (if at all) when we decide to decrease the size of the hidden layers (that is, the number of nodes in each layer)?
 # 
 # ## Answer:
-# [FILL THIS IN]
+# [we should increase p when decrease the size of the hidden layer.]
 # 
 

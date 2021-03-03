@@ -371,6 +371,11 @@ def layernorm_forward(x, gamma, beta, ln_param):
     # the batch norm code and leave it almost unchanged?                      #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    mean = np.mean(x, axis = 1, keepdims=True)
+    var = np.var(x, axis = 1, keepdims=True)
+    xn = (x - mean)/np.sqrt(var+eps)
+    out = gamma*xn + beta
+    cache = (gamma, beta,eps, x, mean, var, xn, out)
 
     pass
 
@@ -406,6 +411,17 @@ def layernorm_backward(dout, cache):
     # still apply!                                                            #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    N, D = dout.shape
+    gamma, beta, eps, x, mean, var, xn, out = cache
+    dgamma = np.sum(xn*dout, axis = 0)
+    dbeta = np.sum(dout, axis = 0)
+
+    dl_xn = dout*gamma
+    tmp1 = -0.5*np.sum(dl_xn*(x-mean), axis = 1, keepdims=True)
+    tmp2 = np.power((var+eps), -1.5)
+    dl_var = -0.5*np.sum(dl_xn*(x-mean), axis = 1, keepdims=True)*np.power((var+eps), -1.5)
+    dl_mean = -np.sum(dl_xn, axis = 1, keepdims=True)/np.sqrt(var+eps) + dl_var*2*np.sum((x-mean), axis = 1, keepdims=True)/D
+    dx = dl_xn/np.sqrt(var+eps) + dl_mean/D + dl_var*2*(x-mean)/D
 
     pass
 
@@ -455,7 +471,7 @@ def dropout_forward(x, dropout_param):
         # Store the dropout mask in the mask variable.                        #
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        mask = (np.random.rand(*x.shape) > p)/p
+        mask = (np.random.rand(*x.shape) < p)/p
         out = x*mask
 
         pass

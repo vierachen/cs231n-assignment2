@@ -222,8 +222,8 @@ class FullyConnectedNet(object):
                         np.random.randn(input_dim, hidden_dims[i])
                     self.params[str_b] = np.zeros(hidden_dims[i])
                     
-                    self.params[str_gamma] = np.ones(input_dim) #TODO 维度不对
-                    self.params[str_beta] = np.zeros(input_dim)
+                    self.params[str_gamma] = np.ones(hidden_dims[i]) 
+                    self.params[str_beta] = np.zeros(hidden_dims[i])
                 elif layer == self.num_layers:
                     self.params[str_w] = weight_scale * \
                         np.random.randn(hidden_dims[i-1], num_classes)
@@ -233,8 +233,8 @@ class FullyConnectedNet(object):
                         np.random.randn(hidden_dims[i-1], hidden_dims[i])
                     self.params[str_b] = np.zeros(hidden_dims[i])
 
-                    self.params[str_gamma] = np.ones(input_dim)
-                    self.params[str_beta] = np.zeros(input_dim)
+                    self.params[str_gamma] = np.ones(hidden_dims[i])
+                    self.params[str_beta] = np.zeros(hidden_dims[i])
         else:
             for i in range(self.num_layers):
                 layer = i+1
@@ -318,39 +318,71 @@ class FullyConnectedNet(object):
         N = X.shape[0]
         h={}
         self.cache = {}
-        
-        if self.normalization:
-            for i in range(self.num_layers):
-                layer = i+1
-                str_w = 'W' + str(layer)
-                str_b = 'b' + str(layer)
-                str_gamma = 'gamma' + str(layer)
-                str_beta = 'beta' + str(layer)
-                str_gamma = 'gamma' + str(layer)
-                str_beta = 'beta' + str(layer)
-                if layer == 1:
-                    h[layer], self.cache[layer] = affine_bn_relu_forward(
-                        X.reshape(N, -1), self.params[str_w], self.params[str_b], self.params[str_gamma], self.params[str_beta], bn_param)
-                elif layer == self.num_layers:
-                    scores, self.cache[layer] = affine_forward(
+        drop_cache = {}
+        h[0]=X.reshape(N, -1)
+
+        for i in range(self.num_layers):
+            layer = i+1
+            str_w = 'W' + str(layer)
+            str_b = 'b' + str(layer)
+            str_gamma = 'gamma' + str(layer)
+            str_beta = 'beta' + str(layer)
+
+            if layer == self.num_layers:
+                scores, self.cache[layer] = affine_forward(
                         h[layer-1], self.params[str_w], self.params[str_b])
-                else:
+            else:
+                if self.normalization == 'batchnorm':
                     h[layer], self.cache[layer] = affine_bn_relu_forward(
-                        h[layer - 1], self.params[str_w], self.params[str_b], self.params[str_gamma], self.params[str_beta], bn_param)
-        else:
-            for i in range(self.num_layers):
-                layer = i+1
-                str_w = 'W' + str(layer)
-                str_b = 'b' + str(layer)
-                if layer == 1:
-                        h[layer], self.cache[layer] = affine_relu_forward(
-                            X.reshape(N, -1), self.params[str_w], self.params[str_b])
-                elif layer == self.num_layers:
-                    scores, self.cache[layer] = affine_forward(
-                        h[layer-1], self.params[str_w], self.params[str_b])
+                        h[layer - 1], self.params[str_w], self.params[str_b], self.params[str_gamma], self.params[str_beta], self.bn_params[i])
+                elif self.normalization == 'layernorm':
+                    h[layer], self.cache[layer] = affine_ln_relu_forward(
+                        h[layer - 1], self.params[str_w], self.params[str_b], self.params[str_gamma], self.params[str_beta], self.bn_params[i])
                 else:
                     h[layer], self.cache[layer] = affine_relu_forward(
                         h[layer - 1], self.params[str_w], self.params[str_b])
+
+                if self.use_dropout:
+                    h[layer], drop_cache[layer] = dropout_forward(h[layer], self.dropout_param)
+
+
+
+        
+        # if self.normalization:
+        #     for i in range(self.num_layers):
+        #         layer = i+1
+        #         str_w = 'W' + str(layer)
+        #         str_b = 'b' + str(layer)
+        #         str_gamma = 'gamma' + str(layer)
+        #         str_beta = 'beta' + str(layer)
+
+        #         if layer == self.num_layers:
+        #             scores, self.cache[layer] = affine_forward(
+        #                 h[layer-1], self.params[str_w], self.params[str_b])
+        #         else:
+        #             if self.normalization == 'batchnorm':
+        #                 h[layer], self.cache[layer] = affine_bn_relu_forward(
+        #                     h[layer - 1], self.params[str_w], self.params[str_b], self.params[str_gamma], self.params[str_beta], self.bn_params[i])
+        #             elif self.normalization == 'layernorm':
+        #                 h[layer], self.cache[layer] = affine_ln_relu_forward(
+        #                     h[layer - 1], self.params[str_w], self.params[str_b], self.params[str_gamma], self.params[str_beta], self.bn_params[i])
+        #             else:
+        #                 assert "normalization is not supported."
+
+        # else:
+        #     for i in range(self.num_layers):
+        #         layer = i+1
+        #         str_w = 'W' + str(layer)
+        #         str_b = 'b' + str(layer)
+        #         # if layer == 1:
+        #         #         h[layer], self.cache[layer] = affine_relu_forward(
+        #         #             X.reshape(N, -1), self.params[str_w], self.params[str_b])
+        #         if layer == self.num_layers:
+        #             scores, self.cache[layer] = affine_forward(
+        #                 h[layer-1], self.params[str_w], self.params[str_b])
+        #         else:
+        #             h[layer], self.cache[layer] = affine_relu_forward(
+        #                 h[layer - 1], self.params[str_w], self.params[str_b])
 
         pass
 
@@ -385,35 +417,69 @@ class FullyConnectedNet(object):
 
         dh = {}
 
-        if self.normalization:
-            for layer in range(self.num_layers, 0, -1):
-                i = layer - 1
-                str_w = 'W' + str(layer)
-                str_b = 'b' + str(layer)
-                str_gamma = 'gamma' + str(layer)
-                str_beta = 'beta' + str(layer)
-                str_gamma = 'gamma' + str(layer)
-                str_beta = 'beta' + str(layer)
-                if layer == self.num_layers:
-                    dh[i], grads[str_w], grads[str_b] = affine_backward(
-                        dscores, self.cache[layer])
-                else:
+        for layer in range(self.num_layers, 0, -1):
+            i = layer - 1
+            str_w = 'W' + str(layer)
+            str_b = 'b' + str(layer)
+            str_gamma = 'gamma' + str(layer)
+            str_beta = 'beta' + str(layer)
+
+            if layer == self.num_layers:
+                dh[i], grads[str_w], grads[str_b] = affine_backward(
+                    dscores, self.cache[layer])
+            else:
+                if self.use_dropout:
+                    dh[layer] = dropout_backward(dh[layer], drop_cache[layer])
+
+                if self.normalization == 'batchnorm':
                     dh[i], grads[str_w], grads[str_b], grads[str_gamma], grads[str_beta]  = affine_bn_relu_backward(
                         dh[layer], self.cache[layer])
-
-                grads[str_w] += self.reg * self.params[str_w]
-        else:
-            for layer in range(self.num_layers, 0, -1):
-                i = layer -1
-                str_w = 'W' + str(layer)
-                str_b = 'b' + str(layer)
-
-                if layer == self.num_layers:
-                    dh[i], grads[str_w], grads[str_b] = affine_backward(dscores, self.cache[layer])
+                elif self.normalization == 'layernorm':
+                    dh[i], grads[str_w], grads[str_b], grads[str_gamma], grads[str_beta]  = affine_ln_relu_backward(
+                    dh[layer], self.cache[layer])
                 else:
                     dh[i], grads[str_w], grads[str_b] = affine_relu_backward(dh[layer], self.cache[layer])
+
+            grads[str_w] += self.reg * self.params[str_w]
+
+
+        
+
+        # if self.normalization:
+        #     for layer in range(self.num_layers, 0, -1):
+        #         i = layer - 1
+        #         str_w = 'W' + str(layer)
+        #         str_b = 'b' + str(layer)
+        #         str_gamma = 'gamma' + str(layer)
+        #         str_beta = 'beta' + str(layer)
+
+        #         if layer == self.num_layers:
+        #             dh[i], grads[str_w], grads[str_b] = affine_backward(
+        #                 dscores, self.cache[layer])
+        #         else:
+        #             if self.normalization == 'batchnorm':
+        #                 dh[i], grads[str_w], grads[str_b], grads[str_gamma], grads[str_beta]  = affine_bn_relu_backward(
+        #                     dh[layer], self.cache[layer])
+        #             elif self.normalization == 'layernorm':
+        #                 dh[i], grads[str_w], grads[str_b], grads[str_gamma], grads[str_beta]  = affine_ln_relu_backward(
+        #                 dh[layer], self.cache[layer])
+        #             else:
+        #                 assert "normalization is not supported."
+
+        #         grads[str_w] += self.reg * self.params[str_w]
+
+        # else:
+        #     for layer in range(self.num_layers, 0, -1):
+        #         i = layer -1
+        #         str_w = 'W' + str(layer)
+        #         str_b = 'b' + str(layer)
+
+        #         if layer == self.num_layers:
+        #             dh[i], grads[str_w], grads[str_b] = affine_backward(dscores, self.cache[layer])
+        #         else:
+        #             dh[i], grads[str_w], grads[str_b] = affine_relu_backward(dh[layer], self.cache[layer])
                 
-                grads[str_w] += self.reg * self.params[str_w]
+        #         grads[str_w] += self.reg * self.params[str_w]
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -423,7 +489,7 @@ class FullyConnectedNet(object):
 
         return loss, grads
 
-
+# affine-bn-relu
 def affine_bn_relu_forward(x, w, b, gamma, beta, bn_param):
     a, fc_cache = affine_forward(x, w, b)
     b, bn_cache = batchnorm_forward(a, gamma, beta, bn_param)
@@ -437,5 +503,22 @@ def affine_bn_relu_backward(dout, cache):
     fc_cache, bn_cache, relu_cache = cache
     db = relu_backward(dout, relu_cache)
     da, dgamma, dbeta = batchnorm_backward(db, bn_cache)
+    dx, dw, db = affine_backward(da, fc_cache)
+    return dx, dw, db, dgamma, dbeta
+
+# affine-ln-relu
+def affine_ln_relu_forward(x, w, b, gamma, beta, bn_param):
+    a, fc_cache = affine_forward(x, w, b)
+    b, bn_cache = layernorm_forward(a, gamma, beta, bn_param)
+    out, relu_cache = relu_forward(b)
+
+    cache = (fc_cache, bn_cache, relu_cache)
+
+    return out, cache
+
+def affine_ln_relu_backward(dout, cache):
+    fc_cache, bn_cache, relu_cache = cache
+    db = relu_backward(dout, relu_cache)
+    da, dgamma, dbeta = layernorm_backward(db, bn_cache)
     dx, dw, db = affine_backward(da, fc_cache)
     return dx, dw, db, dgamma, dbeta
